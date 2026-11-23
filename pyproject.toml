@@ -1,0 +1,29 @@
+[project]
+name = "ghl-voice-ai-crm-concierge"
+version = "0.1.0"
+description = "GoHighLevel API v2, Dual Voice AI (Gemini Live / Retell HMAC) & Human-In-The-Loop (HITL) Receptionist Concierge with Integer-Cent Financial Guardrails"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Juan Ignacio Morales", email = "juan@juanignaciomorales.com" },
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "websockets>=13.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "google-genai>=1.5.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.25.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

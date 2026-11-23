@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horizon Estates (Demo) — Portal Financiamiento &amp; Cockpit Agéntico GHL v2</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div id="pin-gate-modal" class="hidden" style="position:fixed;inset:0;z-index:9999;background:rgba(7,12,24,0.94);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:1.5rem;">
+    <div class="panel" style="max-width:430px;width:100%;text-align:center;border:1px solid rgba(34,197,94,0.35);">
+      <div class="brand-crest" style="margin:0 auto 0.75rem auto;">HE</div>
+      <h2 style="justify-content:center;margin-bottom:0.4rem;">Entorno Ejecutivo Privado</h2>
+      <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:1rem;">
+        Demostración interactiva de arquitectura CRM y Voz IA preparada por <strong>Juan Ignacio Morales</strong>.<br />
+        Ingresa el PIN de invitación para desbloquear el entorno en vivo:
+      </p>
+      <form onsubmit="submitPinGate(event)" style="display:flex;gap:0.5rem;justify-content:center;">
+        <input id="pin-gate-input" class="text-input" type="password" inputmode="numeric" maxlength="10" placeholder="PIN de acceso" style="max-width:180px;text-align:center;font-weight:700;letter-spacing:0.15em;" required />
+        <button type="submit" class="btn-primary">Desbloquear →</button>
+      </form>
+      <div id="pin-gate-error" class="hidden" style="color:#f87171;font-size:0.78rem;margin-top:0.55rem;">PIN inválido. Solicita tu código de acceso en la sesión.</div>
+    </div>
+  </div>
+  <style>#pin-gate-modal.hidden { display: none !important; }</style>
+
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand-crest">HE</div>
+      <div>
+        <div class="brand-title">Horizon Estates · AI Concierge Demo</div>
+        <div class="brand-sub">High Desert, San Bernardino County, CA · Motor Agéntico × GoHighLevel v2</div>
+      </div>
+    </div>
+
+    <div class="view-switcher" role="tablist">
+      <button id="tab-buyer" class="switch-btn active" onclick="switchView('buyer')">
+        🏡 Vista Comprador (Portal + Sofía IA)
+      </button>
+      <button id="tab-director" class="switch-btn" onclick="switchView('director')">
+        🎛️ Vista Socio Director (HITL + Sync GHL)
+        <span id="hitl-badge" class="badge-counter hidden">0</span>
+      </button>
+    </div>
+
+    <div class="status-cluster">
+      <span id="ghl-status-pill" class="pill preview">GHL API v2: Verificando…</span>
+      <select id="voice-strategy-select" class="select-compact" title="VoiceProviderAdapter Strategy">
+        <option value="gemini_live">🎙️ Voz: Gemini Live WS (0 Teléfono Expuesto)</option>
+        <option value="retell">📞 Voz: Retell AI Adapter (Web/PSTN)</option>
+      </select>
+      <button id="btn-reset-demo" class="btn-xs" onclick="resetDemo()">↺ Reiniciar Demo + GHL</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ==================== VISTA 1: COMPRADOR ==================== -->
+    <section id="view-buyer">
+      <div class="hero-strip">
+        <div>
+          <h1>Terrenos con Financiamiento Directo del Dueño en el High Desert</h1>
+          <p>Califica hoy mismo con tu <strong>ITIN, Pasaporte o SSN</strong> sin bancos ni revisión crediticia tradicional.</p>
+        </div>
+        <div class="trust-tags">
+          <span class="trust-tag">✓ Aceptamos ITIN / Pasaporte</span>
+          <span class="trust-tag">✓ Contrato en Español</span>
+          <span class="trust-tag">✓ Atención IA 24/7 (&lt; 2s)</span>
+        </div>
+      </div>
+
+      <div class="buyer-grid">
+        <div>
+          <div id="lots-container" class="lots-grid"></div>
+
+          <div class="panel">
+            <h2>
+              <span>🧮 Simulador Exacto de Mensualidades</span>
+              <span id="calc-lot-badge" class="pill">LOT-AV-01</span>
+            </h2>
+
+            <div class="calc-row">
+              <label>
+                <span>Enganche disponible (Down Payment):</span>
+                <strong id="down-label">$3,500 USD</strong>
+              </label>
+              <input id="down-slider" type="range" min="1500" max="20000" step="100" value="3500" />
+            </div>
+
+            <div class="calc-row">
+              <label><span>Plazo de financiamiento:</span></label>
+              <div id="term-buttons" class="term-group">
+                <button class="chip-btn" data-term="36">36 meses</button>
+                <button class="chip-btn" data-term="48">48 meses</button>
+                <button class="chip-btn active" data-term="60">60 meses</button>
+                <button class="chip-btn" data-term="84">84 meses</button>
+              </div>
+            </div>
+
+            <div class="calc-row">
+              <label><span>Documento para escritura/contrato:</span></label>
+              <div id="doc-buttons" class="term-group">
+                <button class="chip-btn active" data-doc="ITIN">ITIN</button>
+                <button class="chip-btn" data-doc="PASSPORT">Pasaporte</button>
+                <button class="chip-btn" data-doc="SSN">Seguro Social (SSN)</button>
+                <button class="chip-btn" data-doc="CASH">Contado</button>
+              </div>
+            </div>
+
+            <div class="quote-result">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:0.5rem;">
+                <div>
+                  <div style="font-size:0.78rem;color:var(--text-muted);">Mensualidad estimada:</div>
+                  <div id="quote-monthly" class="monthly-big">$771.60 USD/mes</div>
+                </div>
+                <div style="text-align:right;font-size:0.8rem;color:var(--text-muted);">
+                  <div>Contado: <strong id="quote-cash" style="color:var(--text);">$39,900 USD</strong></div>
+                  <div>Saldo financiado: <strong id="quote-principal" style="color:var(--text);">$36,400 USD</strong></div>
+                </div>
+              </div>
+              <div id="quote-hitl-warning" class="hitl-alert-inline hidden"></div>
+              <div style="margin-top:0.65rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                <small style="color:var(--text-muted);font-size:0.72rem;">*Cálculo informativo en centavos exactos sujeto a contrato oficial.</small>
+                <button class="btn-primary" onclick="sendCalculatorToChat()">Enviar esta cotización a Sofía IA →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Recepcionista IA Voz + Chat Omnicanal -->
+        <div class="panel">
+          <h2>
+            <span>🤖 Sofía — Recepcionista IA 24/7 (Voz &amp; Chat)</span>
+            <div style="display:flex;gap:0.35rem;align-items:center;flex-wrap:wrap;">
+              <button id="btn-toggle-chat-audio" class="btn-xs approve" onclick="toggleChatAudio()" title="Reproducir con voz neuronal las respuestas del chat">
+                🔊 Voz Activa: ON
+              </button>
+              <span id="buyer-hitl-pill" class="pill live">IA Autónoma Activa</span>
+            </div>
+          </h2>
+
+          <div class="identity-inputs">
+            <input id="buyer-name" class="text-input" value="Prospecto Demo" placeholder="Tu nombre (Demo)" />
+            <input id="buyer-phone" class="text-input" value="+17605550199" placeholder="Teléfono Ficticio Demo (+1 760-555-0199)" />
+          </div>
+
+          <button id="voice-call-btn" class="btn-voice" onclick="toggleVoiceCall()">
+            🎙️ Hablar por Voz con Sofía Ahora (Sin Exponer Teléfono · Aviso CA § 632)
+          </button>
+
+          <div id="voice-drawer" class="voice-drawer hidden">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.45rem;">
+              <strong id="voice-status-text">🔴 Conectando llamada con Sofía…</strong>
+              <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                <button id="btn-handsfree" class="btn-xs approve" onclick="toggleHandsFree()">🔁 Manos Libres: ON</button>
+                <button id="btn-record-audio" class="btn-xs approve" onclick="toggleAudioRecording()">🎤 Hablar / Pausar</button>
+              </div>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;margin-bottom:0.45rem;">
+              <div id="mic-level-bar" style="height:100%;width:0%;background:#22c55e;transition:width 80ms linear;"></div>
+            </div>
+            <p id="voice-ca-notice" style="color:#86efac;font-size:0.76rem;margin-bottom:0.45rem;"></p>
+            <div id="voice-live-log" style="max-height:130px;overflow-y:auto;font-size:0.77rem;margin-bottom:0.45rem;display:flex;flex-direction:column;gap:0.25rem;"></div>
+            <div style="display:flex;gap:0.4rem;">
+              <input id="voice-utterance-input" class="text-input" onkeydown="if(event.key==='Enter'){event.preventDefault();sendSpokenTurn();}" placeholder="Habla al micrófono o escribe aquí en la llamada (ej. ¿Tienen terrenos en Colorado?)…" />
+              <button class="btn-primary" onclick="sendSpokenTurn()">Decir</button>
+            </div>
+          </div>
+
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.35rem;">Pruebas rápidas conversacionales y Guardrails (1 clic):</div>
+          <div class="quick-prompts">
+            <button class="prompt-pill" onclick="quickChat('Hola, tengo ITIN y $3,500 de enganche para el terreno de Apple Valley. ¿Qué precio y servicios tiene?')">
+              1. Cotizar Apple Valley ($3,500 ITIN)
+            </button>
+            <button class="prompt-pill" onclick="quickChat('¿Ustedes tienen terrenos o servicios en Colorado?')">
+              2. ¿Tienen cobertura en Colorado?
+            </button>
+            <button class="prompt-pill" onclick="quickChat('Solo tengo $2,500 en efectivo hoy mismo para el de Apple Valley, ¿me aprueban excepción?')">
+              3. Regatear a $2,500 (Dispara HITL)
+            </button>
+            <button class="prompt-pill" onclick="quickChat('Quiero apartar hoy el terreno de 5 acres en Phelan.')">
+              4. Pedir lote Apartado (Phelan)
+            </button>
+            <button class="prompt-pill" onclick="quickChat('Excelente, quiero agendar cita para ir a ver el terreno de Apple Valley este sábado.')">
+              5. Agendar visita sábado
+            </button>
+          </div>
+
+          <div id="chat-box" class="chat-box"></div>
+
+          <form class="chat-input-row" onsubmit="submitChatForm(event)">
+            <input id="chat-input" class="text-input" placeholder="Escribe como comprador en WhatsApp / IG / Web…" required />
+            <button type="submit" class="btn-primary">Enviar</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA 2: SOCIO DIRECTOR (HITL + GHL) ==================== -->
+    <section id="view-director" class="hidden">
+      <div class="cockpit-top">
+        <div class="panel">
+          <h2>
+            <span>⚡ Bono Incluido: Reactivador Agéntico de Leads Muertos (2022–2025)</span>
+            <button id="btn-reactivate" class="btn-primary" onclick="runDeadLeadsReactivation()">
+              Ejecutar Reactivación IA (5 Leads Fríos)
+            </button>
+          </h2>
+          <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:0.75rem;">
+            Rescata prospectos olvidados de campañas anteriores en redes sociales e inyecta automáticamente en GoHighLevel solo a quienes responden listos para comprar o requieren aprobación <strong>HITL</strong>.
+          </p>
+          <div id="dead-leads-list" class="log-list"></div>
+        </div>
+
+        <div class="panel">
+          <h2>
+            <span>🔗 Inspector Dual-Write (`SQLite WAL` + `GoHighLevel API v2`)</span>
+            <button class="btn-xs" onclick="verifyGhlLive()">Probar Ping GHL v2</button>
+          </h2>
+          <div id="crm-sync-logs" class="log-list"></div>
+        </div>
+      </div>
+
+      <h2 style="font-size:1.05rem;margin-bottom:0.7rem;">
+        📋 Embudo Comercial Sincronizado &amp; Compuertas Human-in-the-Loop (HITL)
+      </h2>
+      <div class="kanban-board">
+        <div class="kanban-col">
+          <h3><span>1. Nuevo Lead</span><span id="count-NEW_LEAD">0</span></h3>
+          <div id="col-NEW_LEAD"></div>
+        </div>
+        <div class="kanban-col">
+          <h3><span>2. Calificado ITIN</span><span id="count-QUALIFIED_ITIN">0</span></h3>
+          <div id="col-QUALIFIED_ITIN"></div>
+        </div>
+        <div class="kanban-col">
+          <h3><span>3. ⚠️ Aprobación HITL</span><span id="count-PENDING_HITL_APPROVAL">0</span></h3>
+          <div id="col-PENDING_HITL_APPROVAL"></div>
+        </div>
+        <div class="kanban-col">
+          <h3><span>4. Visita / Cierre</span><span id="count-SHOWING_BOOKED">0</span></h3>
+          <div id="col-SHOWING_BOOKED"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>🎙️ Registro de Llamadas de Voz &amp; Auditoría Legal California (§ 632)</h2>
+        <div id="voice-calls-log" class="log-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
