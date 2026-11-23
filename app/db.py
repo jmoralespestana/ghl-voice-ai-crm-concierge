@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +14,21 @@ from app.domain import SEED_DEAD_LEADS
 
 
 def new_id() -> str:
-    return str(uuid.uuid7())
+    """Generate a time-ordered RFC 9562 UUIDv7 string across Python 3.12–3.14+."""
+    uuid7_fn = getattr(uuid, "uuid7", None)
+    if callable(uuid7_fn):
+        return str(uuid7_fn())
+    ts_ms = time.time_ns() // 1_000_000
+    rand_a = int.from_bytes(os.urandom(2), "big") & 0x0FFF
+    rand_b = int.from_bytes(os.urandom(8), "big") & 0x3FFFFFFFFFFFFFFF
+    value = (
+        ((ts_ms & 0xFFFFFFFFFFFF) << 80)
+        | (0x7 << 76)
+        | (rand_a << 64)
+        | (0x2 << 62)
+        | rand_b
+    )
+    return str(uuid.UUID(int=value))
 
 
 def utc_now_iso() -> str:
